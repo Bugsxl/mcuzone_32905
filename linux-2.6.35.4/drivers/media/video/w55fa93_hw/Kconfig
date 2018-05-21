@@ -1,0 +1,97 @@
+config W55FA93_VIDEOIN_DEV1
+	bool "W55FA93 video capture port 1 support"
+	depends on ARCH_W55FA93 && VIDEO_DEV
+	---help---
+	  Say Y here if you have W55FA93chip(nuvoTon).
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called W55FA93_videoin_dev1.
+
+
+config SUPPORT_EXTRA_BUFFER_DEV1
+	tristate "Support more one planar buffer"
+	depends on W55FA93_VIDEOIN_DEV1
+	default y
+	---help---
+	  Say Y here if you wnat to support more one planar (Default 2 planar buffers) 
+
+config VIN_DEV1_BUFFER_SIZE
+        hex "VideoIn DEV1 buffer size"
+        default 0x238800
+        depends on W55FA93_VIDEOIN_DEV1
+        help
+          Default is (640x480x2+4096)x3+(320x240x2+4096)x3 = 0x238800 (Planar YUV422)
+
+choice 
+	prompt "Encode format"
+        default PLANAR_YUV422_YUV420_DEV1
+	depends on W55FA93_VIDEOIN_DEV1
+	
+		config  PLANAR_YUV422_YUV420_DEV1
+			bool "Support planar yuv422/yuv420"
+		config  PLANAR_YUV420_DEV1
+			bool "Support planar yuv420"
+endchoice
+
+config SPECIFIED_PACKET_DIMENSION_DEV1
+	tristate "Specified the packet dimension"
+	depends on W55FA93_VIDEOIN_DEV1
+	help
+	  Specified the packet dimension. if disable, the packet dimension same as what panel dimension you choice.
+	  If you don't know what to do here, say N.
+
+config PACKET_WIDTH
+	int "Packet pipe width"
+	depends on SPECIFIED_PACKET_DIMENSION_DEV1
+	default "320"
+config PACKET_HEIGHT
+	int "Packet pipe height"
+	depends on SPECIFIED_PACKET_DIMENSION_DEV1
+	default "240"
+
+choice
+    prompt "Video Sensor support"
+		default SENSOR_OV7725_DEV1
+	depends on W55FA93_VIDEOIN_DEV1
+  
+		config SENSOR_OV9660_DEV1
+			bool "OV9660 sensor support"
+		config SENSOR_OV7670_DEV1
+			bool "OV7670 sensor support"
+		config SENSOR_OV7725_DEV1
+			bool "OV7725 sensor support"
+		config SENSOR_OV2640_DEV1
+			bool "OV2640 sensor support"
+		config SENSOR_NT99140_DEV1
+			bool "NT99140 sensor support"
+		config SENSOR_NT99141_DEV1
+			bool "NT99141 sensor support"
+		config SENSOR_NT99050_DEV1
+			bool "NT99050 sensor support"
+endchoice
+
+config SENSOR_POWER_DOWN
+	tristate "Support sensor power down pin"
+	depends on W55FA93_VIDEOIN_DEV1
+	default y
+	---help---
+	  Say Y here if you wnat to support sensor power down pin.
+
+config SENSOR_RESET
+	tristate "Support sensor reset pin"
+	depends on W55FA93_VIDEOIN_DEV1
+	default y
+	---help---
+	  Say Y here if you wnat to support sensor reset pin.
+  
+
+
+choice
+    prompt "Horizonal/Vertical sync pins select"
+        default HV_FROM_GPE0_GPE1_DEV1
+	depends on W55FA93_VIDEOIN_DEV1
+		config HV_FROM_GPB2_GPB3_DEV1
+			bool "Hsync/Vsync through GPB2/GPB3"
+		config HV_FROM_GPE0_GPE1_DEV1
+			bool "Hsync/Vsync through GPE0/GPE1"	
+endchoice

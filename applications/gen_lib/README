@@ -1,0 +1,8 @@
+1. please make sure kernel supports ROMFS filesystem
+2. extract compressed file lib_xxx.tar.gz
+3. copy necessary shared object and soft link files to "lib" folder
+4. run gen_lib.sh to generate "lib_romfs.bin" romfs image
+5. copy the romfs image to /mnt/nand1-1
+6. in file initramfs/etc/profile, it will mount lib_romfs.bin to /lib 
+   if detects file /mnt/nand1-1/lib_romfs.bin
+

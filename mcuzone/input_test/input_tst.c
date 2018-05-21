@@ -1,0 +1,86 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <sys/poll.h>
+#include <linux/input.h>
+
+
+#define DEFAULT_DEVICE_NAME "/dev/input/event1"
+
+#define SLEEP_TIME_MS   50
+
+/* mcuzone 9261EK key test */
+
+int main(int argc, char *argv[])
+{
+    int fd_key = 0;   
+    struct input_event ev;
+    int ret = 0;
+    int total = 0;
+    char *input_dev = DEFAULT_DEVICE_NAME;
+
+    if (argc != 2)
+    {
+        printf("%s:Wrong arguments.\n\r", argv[0]);
+        printf("Example: %s /dev/input/event1\n\r", argv[0]);
+        printf("Please use cat /proc/bus/input/devices to get the device name.\n\r");
+        exit(1);
+    }
+
+    input_dev = argv[1];
+    
+    fd_key = open(input_dev, O_RDONLY);
+    
+    printf("Nuvoton input event device[%s] opened[%d]\n\r", input_dev, fd_key);
+    
+    if (-1 == fd_key)
+    {
+        perror(input_dev);
+        
+        return -1;
+    }
+    
+    while(1)
+    {
+        ret = read(fd_key, &ev, sizeof(struct input_event));
+        
+        if (ret == sizeof(struct input_event)) 
+        {
+            switch (ev.type) 
+            {
+                case EV_SYN:
+                    //printf("EV_SYN\n\r");
+                    break;
+                    
+                case EV_KEY:
+                    if (ev.value)
+                    {
+                        printf("key[0x%x=%d] down\n\r", ev.code, ev.code);
+                    }
+                    else
+                    {
+                        printf("key[0x%x=%d] up  \n\r", ev.code, ev.code);
+                    }
+                    break;
+                    
+                case EV_ABS:
+                default:
+                    printf("ev.type=%d ev.code=%d ev.value=%d\n\r", ev.type, ev.code, ev.value);
+                    break;
+            }
+        }
+        else
+        {
+            printf("Wrong data read, size[%d]\n\r", ret);
+        }
+        
+        usleep(SLEEP_TIME_MS * 1000);// microseconds
+    }
+
+    close(fd_key);
+
+    return 0;
+}

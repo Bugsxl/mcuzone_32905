@@ -1,0 +1,67 @@
+#!/bin/sh
+
+ROOTFS=`grep CONFIG_INITRAMFS_SOURCE .config | awk 'BEGIN{FS="\""} {print $2}'`
+if [ "$ROOTFS" = "" ]; then
+	ROOTFS="../rootfs-2.6.35"
+fi
+
+if [ "$#" = 1 ]; then
+	if [ "$1" = "nand" ]; then	# for NAND boot
+		if [ `grep -v "^#" .config | grep "CONFIG_ONBOARD_MTD"` ]; then
+			# for on-board NAND MTD solution
+			cp $ROOTFS/etc/profile_nand_mtd $ROOTFS/etc/profile
+			cp $ROOTFS/etc/mdev_nand_mtd.conf $ROOTFS/etc/mdev.conf
+		else
+			# for NAND boot + NAND/SD solution
+			cp $ROOTFS/etc/profile_nand $ROOTFS/etc/profile
+			cp $ROOTFS/etc/mdev_nand.conf $ROOTFS/etc/mdev.conf
+		fi
+	elif [ "$1" = "sd" ]; then	# for SD boot + NAND/SD solution
+		cp $ROOTFS/etc/profile_sd $ROOTFS/etc/profile
+		cp $ROOTFS/etc/mdev_sd.conf $ROOTFS/etc/mdev.conf
+	elif [ "$1" = "spi" ]; then	# for SPI boot
+		if [ `grep -v "^#" .config | grep "CONFIG_INITRAMFS_ROOT_UID"` ]; then
+			# for SPI boot + NAND + SD solution
+			cp $ROOTFS/etc/profile_spi $ROOTFS/etc/profile
+		else
+			# for SPI boot + NAND + SD solution but uses ROMFS
+			cp $ROOTFS/etc/profile_spi_romfs $ROOTFS/etc/profile
+		fi
+		cp $ROOTFS/etc/mdev_spi.conf $ROOTFS/etc/mdev.conf
+	else
+		echo "does not support \"$1\" target, please type \"nand\", \"sd\" or \"spi\""
+		exit 1
+	fi
+fi
+
+make
+
+if [ `grep -v "^#" .config | grep "CONFIG_NUVOTON_W55FA93_SM=m"` ]; then
+	echo "Configure with NAND"
+	cp -a drivers/scsi/nuvoton_nand/nanddrv.ko $ROOTFS/usr
+else
+	echo "Configure without NAND"
+	if [ -f $ROOTFS/usr/nanddrv.ko ]; then
+		rm -f $ROOTFS/usr/nanddrv.ko
+	fi
+fi
+
+if [ `grep -v "^#" .config | grep "CONFIG_USB_FILE_STORAGE=m"` ]; then
+	echo "Configure with USBD mass storage"
+	cp -a drivers/usb/gadget/g_file_storage.ko $ROOTFS/usr
+else
+	echo "Configure without USBD mass storage"
+	if [ -f $ROOTFS/usr/g_file_storage.ko ]; then
+		rm -f $ROOTFS/usr/g_file_storage.ko
+	fi
+fi
+
+if [ `grep -v "^#" .config | grep "CONFIG_INITRAMFS_ROOT_UID"` ]; then
+	echo "Configure with INITRAMFS"
+	make
+else
+	echo "Configure with ROMFS"
+	genromfs -f ../image/rootfs.bin -d $ROOTFS
+	gzip -f -9 ../image/rootfs.bin
+fi
+
